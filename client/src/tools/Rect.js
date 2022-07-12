@@ -30,7 +30,18 @@ export default class Rect extends Tool{
                 width: this.width,
                 height: this.height,
                 color: this.ctx.fillStyle,
-                strokeColor: this.ctx.strokeStyle
+                strokeColor: this.ctx.strokeStyle,
+                lineWidth: this.ctx.lineWidth
+            }
+        }))
+
+        // для прерывности линии на синхр. канвасах одной сессии, если след. фигурой будет выбрана кисть
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            // когда отрываем кисть от холста, линия больше не должна рисоваться на нем - создали тип "finish"
+            figure: {
+                type: 'finish'
             }
         }))
     }
@@ -77,9 +88,10 @@ export default class Rect extends Tool{
 
     }
 
-    static staticDraw(ctx, x, y, w, h, color, strokeColor) {
+    static staticDraw(ctx, x, y, w, h, color, strokeColor, lineWidth) {
         ctx.fillStyle = color;
         ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
         ctx.rect(x, y, w, h);
         // заливка

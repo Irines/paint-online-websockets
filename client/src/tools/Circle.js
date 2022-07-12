@@ -2,9 +2,9 @@ import Tool from "./Tool"
 
 export default class Circle extends Tool{
     // наследуемый класс
-    constructor(canvas) {
+    constructor(canvas, socket, id) {
         // вызывает конструктор родительского класса
-        super(canvas)
+        super(canvas, socket, id)
         this.listen()
     }
 
@@ -17,6 +17,31 @@ export default class Circle extends Tool{
 
     mouseUpHandler(e) {
         this.mouseDown = false;
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            figure: {
+                type: 'circle',
+                x: this.currentX,
+                y: this.currentY,
+                startX: this.startX,
+                startY: this.startY,
+                r: this.r,
+                color: this.ctx.fillStyle,
+                strokeColor: this.ctx.strokeStyle,
+                lineWidth: this.ctx.lineWidth
+            }
+        }))
+
+        // для прерывности линии на синхр. канвасах одной сессии, если след. фигурой будет выбрана кисть
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            // когда отрываем кисть от холста, линия больше не должна рисоваться на нем - создали тип "finish"
+            figure: {
+                type: 'finish'
+            }
+        }))
     }
 
     mouseDownHandler(e) {
@@ -34,12 +59,11 @@ export default class Circle extends Tool{
 
     mouseMoveHandler(e) {
         if (this.mouseDown === true) {
-            let currentX = e.pageX - e.target.offsetLeft;
-            let currentY = e.pageY - e.target.offsetTop;
-            let width = currentX - this.startX;
-            let height = currentY - this.startY;
-            let r = Math.abs(width/2);
-            this.draw(currentX, currentY, r);
+            this.currentX = e.pageX - e.target.offsetLeft;
+            this.currentY = e.pageY - e.target.offsetTop;
+            let width = this.currentX - this.startX;
+            this.r = Math.abs(width/2);
+            this.draw(this.currentX, this.currentY, this.r);
         }
     }
 
@@ -68,6 +92,27 @@ export default class Circle extends Tool{
             // обводка
             this.ctx.stroke();
         })
+    }
+
+    static drawCircle(ctx, startX, startY, currentX, currentY, r, color, strokeColor, lineWidth) {
+        ctx.fillStyle = color;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        if (currentX > startX && currentY > startY) {
+            ctx.arc(startX + r, startY + r, r, 0, 2*Math.PI)
+        }
+        else if (currentX <  startX && currentY <  startY) {
+            ctx.arc( startX - r,  startY - r, r, 0, 2*Math.PI)
+        }
+        else if (currentX <  startX && currentY >  startY) {
+            ctx.arc(startX - r,  startY + r, r, 0, 2*Math.PI)
+        }
+        else if (currentX >  startX && currentY <  startY) {
+            ctx.arc( startX + r, startY - r, r, 0, 2*Math.PI)
+        }
+        ctx.fill();
+        ctx.stroke();
     }
 
 }

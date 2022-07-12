@@ -10,6 +10,9 @@ import {Modal, Button} from 'react-bootstrap';
 import Rect from '../tools/Rect';
 // нужен для отправки запросов с клиента
 import axios from 'axios';
+import Circle from '../tools/Circle';
+import Line from '../tools/Line';
+import Eraser from '../tools/Eraser';
 
 const Canvas = observer(() => {
     // при запуске приложения сохраняем ссылку на канвас при помощи хука useRef
@@ -78,12 +81,18 @@ const Canvas = observer(() => {
     }, [canvasState.username])
 
     const drawHandler = (msg) => {
-        console.log("drawHandler msg", msg)
+        // console.log("drawHandler msg", msg)
         const figure = msg.figure
         const ctx = canvasRef.current.getContext('2d')
         switch (figure.type) {
             case "brush":
-                Brush.draw(ctx, figure.x, figure.y)
+                Brush.draw(ctx, figure.x, figure.y, figure.color, figure.strokeColor, figure.lineWidth)
+                break;  
+            case "eraser":
+                Eraser.drawEraser(ctx, figure.x, figure.y, figure.lineWidth)
+                break;    
+            case "line":
+                Line.drawLine(ctx, figure.startX, figure.startY, figure.x, figure.y, figure.color, figure.strokeColor, figure.lineWidth)
                 break;    
             case "finish":
                 // начинаем новый путь при mouseup, поэтому новая и старая линия теперь не будут соединяться
@@ -91,8 +100,10 @@ const Canvas = observer(() => {
                 break; 
             case "rect":
                 // также параметром можно пeредать толщину линии, цвет обводки
-                Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.strokeColor)
-                break;    
+                Rect.staticDraw(ctx, figure.x, figure.y, figure.width, figure.height, figure.color, figure.strokeColor, figure.lineWidth)
+                break; 
+            case "circle":
+                Circle.drawCircle(ctx, figure.startX, figure.startY, figure.x, figure.y, figure.r, figure.color, figure.strokeColor, figure.lineWidth)   
             default:
                 break;
         }

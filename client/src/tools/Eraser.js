@@ -2,9 +2,9 @@ import Tool from "./Tool"
 
 export default class Eraser extends Tool{
     // наследуемый класс
-    constructor(canvas) {
+    constructor(canvas, socket, id) {
         // вызывает конструктор родительского класса
-        super(canvas)
+        super(canvas, socket, id)
         this.listen()
     }
 
@@ -17,6 +17,14 @@ export default class Eraser extends Tool{
 
     mouseUpHandler(e) {
         this.mouseDown = false;
+        this.socket.send(JSON.stringify({
+            method: 'eraser',
+            id: this.id,
+            // когда отрываем кисть от холста, линия больше не должна рисоваться на нем - создали тип "finish"
+            figure: {
+                type: 'finish'
+            }
+        }))
     }
 
     mouseDownHandler(e) {
@@ -31,6 +39,17 @@ export default class Eraser extends Tool{
     mouseMoveHandler(e) {
         if (this.mouseDown === true) {
             this.draw(e.pageX - e.target.offsetLeft, e.pageY - e.target.offsetTop)
+        
+            this.socket.send(JSON.stringify({
+                method: 'draw',
+                id: this.id,
+                figure: {
+                    type: 'eraser',
+                    x:e.pageX - e.target.offsetLeft,
+                    y:e.pageY - e.target.offsetTop,
+                    lineWidth: this.ctx.lineWidth
+                }
+            }))
         }
     }
 
@@ -40,5 +59,15 @@ export default class Eraser extends Tool{
         this.ctx.strokeStyle = "#FFFFFF";
         // console.log("brush draws")
     }
+
+    static drawEraser(ctx, x, y, lineWidth) {
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = "#FFFFFF";
+        // console.log("brush draws")
+    }
+
+
 
 }

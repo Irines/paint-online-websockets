@@ -2,9 +2,9 @@ import Tool from "./Tool"
 
 export default class Line extends Tool{
     // наследуемый класс
-    constructor(canvas) {
+    constructor(canvas, socket, id) {
         // вызывает конструктор родительского класса
-        super(canvas)
+        super(canvas, socket, id)
         this.listen()
     }
 
@@ -17,6 +17,30 @@ export default class Line extends Tool{
 
     mouseUpHandler(e) {
         this.mouseDown = false;
+
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            figure: {
+                type: 'line',
+                startX: this.startX,
+                startY: this.startY,
+                x: e.pageX - e.target.offsetLeft,
+                y: e.pageY - e.target.offsetTop,
+                color: this.ctx.fillStyle,
+                strokeColor: this.ctx.strokeStyle,
+                lineWidth: this.ctx.lineWidth
+            }
+        }))
+
+        this.socket.send(JSON.stringify({
+            method: 'draw',
+            id: this.id,
+            // когда отрываем кисть от холста, линия больше не должна рисоваться на нем - создали тип "finish"
+            figure: {
+                type: 'finish'
+            }
+        }))
     }
 
     mouseDownHandler(e) {
@@ -28,6 +52,7 @@ export default class Line extends Tool{
         this.startY = e.pageY - e.target.offsetTop;
 
         this.saved = this.canvas.toDataURL()
+
     }
 
     mouseMoveHandler(e) {
@@ -48,7 +73,22 @@ export default class Line extends Tool{
             this.ctx.moveTo(this.startX, this.startY);
             this.ctx.lineTo(x, y);
             this.ctx.stroke();
+            // this.ctx.fill();
         })
+    }
+
+    static drawLine(ctx, startX, startY, x, y, color, strokeColor, lineWidth) {
+        // ctx.fillStyle = color;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = lineWidth;
+        ctx.beginPath();
+        // таким образом получаем координаты курсора мышки
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(x, y);
+        // заливка
+        // ctx.fill();
+        // обводка
+        ctx.stroke();
     }
 
 }
